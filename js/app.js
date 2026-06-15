@@ -155,7 +155,7 @@ const GAMES = {
   box:      { name: "Kutuyu Aç",           icon: "🎁", desc: "Kutu seç, içinden çıkan soruyu çöz — sürprizli quiz.", run: (s, o) => runBox(s, o) },
   groups:   { name: "Gruplara Ayır",       icon: "🗂️", desc: "Her öğeyi ait olduğu doğru gruba yerleştir.", run: (s, o) => runGroups(s, o) },
   cards:    { name: "Bilgi Kartları",      icon: "🃏", desc: "Çalışma modu: kartı çevir, oku, öğren.", run: (s, o) => runCards(s, o) },
-  carpim:   { name: "Çarpım Tablosu",      icon: "✖️", desc: "1×1'den 10×10'a tüm çarpımlar — hız pratiği.", run: (s, o) => runMultiplication(s, o) },
+  carpim:   { name: "Çarpım Tablosu",      icon: "✖️", desc: "1×1–10×10 arasından karışık 20 çarpım — hız pratiği.", run: (s, o) => runMultiplication(s, o) },
   pow2:     { name: "2'nin Kuvvetleri",    icon: "🔢", desc: "2¹'den 2¹⁰'a kadar tüm kuvvetler — hız pratiği.", run: (s, o) => runPowers(s, o, 2, 10) },
   pow3:     { name: "3'ün Kuvvetleri",     icon: "🔢", desc: "3¹'den 3⁶'ya kadar tüm kuvvetler — hız pratiği.", run: (s, o) => runPowers(s, o, 3, 6) },
   pow5:     { name: "5'in Kuvvetleri",     icon: "🔢", desc: "5¹'den 5⁵'e kadar tüm kuvvetler — hız pratiği.", run: (s, o) => runPowers(s, o, 5, 5) },
@@ -312,7 +312,7 @@ const ONDALIK_KESIR = [
 /* ----- MATEMATİK pratikleri (ders/ünite/oyun yapısı yerine düz pratik listesi) ----- */
 const PRACTICES = {
   matematik: [
-    { id: "carpim", icon: "✖️", name: "Çarpım Tablosu", desc: "1×1'den 10×10'a kadar tüm çarpımlar karışık sorulur. Hızını ölç, eksiklerini gör." },
+    { id: "carpim", icon: "✖️", name: "Çarpım Tablosu", desc: "1×1–10×10 arasından her turda karışık 20 çarpım sorulur. Hızını ölç, eksiklerini gör." },
     { id: "pow2", icon: "🔢", name: "2'nin Kuvvetleri", desc: "2¹'den 2¹⁰'a kadar (2, 4, 8 … 1024) tüm kuvvetler karışık sorulur." },
     { id: "pow3", icon: "🔢", name: "3'ün Kuvvetleri", desc: "3¹'den 3⁶'ya kadar (3, 9, 27 … 729) tüm kuvvetler karışık sorulur." },
     { id: "pow5", icon: "🔢", name: "5'in Kuvvetleri", desc: "5¹'den 5⁵'e kadar (5, 25, 125, 625, 3125) tüm kuvvetler karışık sorulur." },
@@ -1106,7 +1106,7 @@ function multiplicationOptions(a, b) {
 
 function runMultiplication(subject, opts) {
   opts = opts || {};
-  const qs = multiplicationQuestions();
+  const qs = multiplicationQuestions().slice(0, 20); // her turda karışık 20 çarpım
   const ctx = { score: 0, max: qs.length * 10, review: [] };
   let i = 0, streak = 0;
   const stage = gameFrame("Çarpım Tablosu", "Puan: <b>0</b>");

@@ -1,7 +1,7 @@
 /* KPSS KFT — Service Worker (çevrimdışı önbellek)
    İçerik güncellendiğinde CACHE adındaki sürümü artır (v1 -> v2) ki
    kullanıcıların eski sürümü silinip yenisi yüklensin. */
-const CACHE = "kpss-arena-v26";
+const CACHE = "kpss-arena-v27";
 const ASSETS = [
   "./",
   "./index.html",

@@ -82,7 +82,7 @@ Pratiklerin çoğu kendi küçük `run*` fonksiyonuna sahiptir ve verisini **`js
 
 | Pratik (id)   | Runner | Veri | İçerik |
 |---------------|--------|------|--------|
-| `carpim` | `runMultiplication` | (üretilir) | 1×1–10×10 tüm çarpımlar |
+| `carpim` | `runMultiplication` | (üretilir) | 1×1–10×10'dan karışık 20 çarpım |
 | `pow2`/`pow3`/`pow5` | `runPowers(base,maxExp)` | (üretilir) | 2/3/5'in kuvvetleri |
 | `kupler` | `runCubes` | (üretilir) | 1³–10³ |
 | `faktoriyel` | `runFactorials` | (üretilir) | 0!–10! |

@@ -496,16 +496,17 @@ body[data-accent] .qcard {
   counter-reset: opt-counter;
 }
 .opt {
-  text-align: left; 
-  padding: 14px 18px; 
+  text-align: left;
+  padding: 14px 18px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.025); 
+  background: rgba(255, 255, 255, 0.025);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  font-size: 1rem; 
+  font-size: 1rem;
   line-height: 1.45;
   font-weight: 600;
   display: flex;
   align-items: center;
+  -webkit-tap-highlight-color: transparent;
   transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), 
               border-color 0.2s, 
               background-color 0.2s;
@@ -529,15 +530,20 @@ body[data-accent] .qcard {
   transition: all 0.2s;
 }
 
-.opt:hover:not(:disabled) { 
-  border-color: var(--accent); 
-  background: rgba(255, 255, 255, 0.06);
-  transform: translateX(4px); 
-}
-.opt:hover:not(:disabled)::before {
-  background: var(--accent);
-  color: #090d16;
-  border-color: var(--accent);
+/* Hover stilleri yalnızca gerçek hover destekleyen cihazlarda (fare/trackpad).
+   Dokunmatik cihazlarda :hover takılı kaldığından (sonraki soruda aynı şık
+   mavi seçili görünür) bunu @media ile dışlıyoruz. */
+@media (hover: hover) and (pointer: fine) {
+  .opt:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: rgba(255, 255, 255, 0.06);
+    transform: translateX(4px);
+  }
+  .opt:hover:not(:disabled)::before {
+    background: var(--accent);
+    color: #090d16;
+    border-color: var(--accent);
+  }
 }
 
 .opt.correct { 
