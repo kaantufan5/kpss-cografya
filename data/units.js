@@ -42,5 +42,9 @@ window.KPSS_DATA._units = {
     { id: "yargi",               name: "Yargı",                      icon: "👨‍⚖️", desc: "Mahkemeler, AYM, HSK, yargı kolları." },
     { id: "idare",               name: "İdare ve Yönetim",           icon: "🏢", desc: "Merkezi-yerel yönetim, vali, belediye, denetim." },
     { id: "guncel-uluslararasi", name: "Güncel ve Uluslararası",     icon: "🌍", desc: "Anayasa tarihimiz, BM, NATO, AB, insan hakları." }
+  ],
+  matematik: [
+    { id: "uslu-koklu",          name: "Üs, Kök ve Sayı Ezberleri",  icon: "🔢", desc: "Kareler, küpler, faktöriyeller, asal sayı tuzakları ve hızlı kare alma." },
+    { id: "kesir-yuzde-ondalik", name: "Kesir, Yüzde ve Ondalık Pratiği", icon: "📊", desc: "Yüzde-kesir-ondalık dönüşümleri, devirli ondalık ve hızlı işlem teknikleri." }
   ]
 };

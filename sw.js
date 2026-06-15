@@ -1,7 +1,7 @@
 /* KPSS KFT — Service Worker (çevrimdışı önbellek)
    İçerik güncellendiğinde CACHE adındaki sürümü artır (v1 -> v2) ki
    kullanıcıların eski sürümü silinip yenisi yüklensin. */
-const CACHE = "kpss-arena-v14";
+const CACHE = "kpss-arena-v26";
 const ASSETS = [
   "./",
   "./index.html",
@@ -12,6 +12,7 @@ const ASSETS = [
   "./data/tarih.js",
   "./data/cografya.js",
   "./data/vatandaslik.js",
+  "./data/matematik.js",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png"

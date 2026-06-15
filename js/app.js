@@ -22,7 +22,7 @@ const $ = (sel) => document.querySelector(sel);
 const STORE = "kpssArenaV1";
 let save;
 try { save = JSON.parse(localStorage.getItem(STORE)) || {}; } catch (e) { save = {}; }
-save.xp = save.xp || { tarih: 0, cografya: 0, vatandaslik: 0 };
+save.xp = save.xp || { tarih: 0, cografya: 0, vatandaslik: 0, matematik: 0 };
 save.best = save.best || {};
 save.prog = save.prog || {};   // save.prog[ders][ünite][seviye] = en iyi yüzde (0..1)
 save.sound = save.sound !== false;
@@ -130,6 +130,13 @@ const SUBJECTS = {
     tagline: "Anayasa, yönetim yapısı, haklar ve özgürlükler",
     info: "",
     games: ["quiz", "oncul", "numbers", "tf", "box", "clues", "match", "memory", "groups", "cards"]
+  },
+  matematik: {
+    name: "Matematik", icon: "🧮",
+    tagline: "İşlem hızını artıran kısa pratikler",
+    info: "",
+    // Matematik ders/ünite/oyun yapısı KULLANMAZ; düz pratik listesi gösterir (bkz. PRACTICES.matematik)
+    games: []
   }
 };
 
@@ -147,7 +154,186 @@ const GAMES = {
   memory:   { name: "Hafıza Kartları",     icon: "🎴", desc: "Kartları çevir, eşleşen çiftleri bul. Hafızanı çalıştır.", run: (s, o) => runMemory(s, o) },
   box:      { name: "Kutuyu Aç",           icon: "🎁", desc: "Kutu seç, içinden çıkan soruyu çöz — sürprizli quiz.", run: (s, o) => runBox(s, o) },
   groups:   { name: "Gruplara Ayır",       icon: "🗂️", desc: "Her öğeyi ait olduğu doğru gruba yerleştir.", run: (s, o) => runGroups(s, o) },
-  cards:    { name: "Bilgi Kartları",      icon: "🃏", desc: "Çalışma modu: kartı çevir, oku, öğren.", run: (s, o) => runCards(s, o) }
+  cards:    { name: "Bilgi Kartları",      icon: "🃏", desc: "Çalışma modu: kartı çevir, oku, öğren.", run: (s, o) => runCards(s, o) },
+  carpim:   { name: "Çarpım Tablosu",      icon: "✖️", desc: "1×1'den 10×10'a tüm çarpımlar — hız pratiği.", run: (s, o) => runMultiplication(s, o) },
+  pow2:     { name: "2'nin Kuvvetleri",    icon: "🔢", desc: "2¹'den 2¹⁰'a kadar tüm kuvvetler — hız pratiği.", run: (s, o) => runPowers(s, o, 2, 10) },
+  pow3:     { name: "3'ün Kuvvetleri",     icon: "🔢", desc: "3¹'den 3⁶'ya kadar tüm kuvvetler — hız pratiği.", run: (s, o) => runPowers(s, o, 3, 6) },
+  pow5:     { name: "5'in Kuvvetleri",     icon: "🔢", desc: "5¹'den 5⁵'e kadar tüm kuvvetler — hız pratiği.", run: (s, o) => runPowers(s, o, 5, 5) },
+  kupler:   { name: "Küpler",              icon: "🧊", desc: "1³'ten 10³'e kadar tüm küpler — hız pratiği.", run: (s, o) => runCubes(s, o, 10) },
+  faktoriyel: { name: "Faktöriyeller",     icon: "❗", desc: "0!'den 10!'e kadar tüm faktöriyeller — hız pratiği.", run: (s, o) => runFactorials(s, o, 10) },
+  asal:     { name: "Asal mı?",            icon: "🔍", desc: "0–100 arası sayılar: asal mı, değil mi?", run: (s, o) => runPrime(s, o) },
+  yuzdeKesir:   { name: "Yüzde → Kesir",   icon: "％", desc: "%10 = 1/10 gibi yüzde-kesir karşılıklarını bul.", run: (s, o) => runConvert(s, o, "Yüzde → Kesir", YUZDE_KESIR) },
+  ondalikKesir: { name: "Ondalık → Kesir", icon: "🔟", desc: "0,2 = 1/5 gibi ondalık-kesir karşılıklarını bul.", run: (s, o) => runConvert(s, o, "Ondalık → Kesir", ONDALIK_KESIR) },
+  bolunebilme:  { name: "Bölünebilme Kuralları", icon: "➗", desc: "Hangi sayının bölünebilme kuralı hangisidir?", run: (s, o) => runDivisibility(s, o) },
+  karekok:      { name: "Karekök", icon: "√", desc: "√144 = 12 gibi tam karelerin (1²–20²) kökünü bul.", run: (s, o) => runSquareRoots(s, o, 20) },
+  geoFormul:    { name: "Alan & Çevre Formülleri", icon: "📐", desc: "Şeklin alan/çevre formülünü seç.", run: (s, o) => runConvert(s, o, "Alan & Çevre Formülleri", GEO_FORMULA) },
+  pisagor:      { name: "Pisagor Üçlüleri", icon: "🔺", desc: "Dik üçgende eksik kenarı bul.", run: (s, o) => runPythagoras(s, o) },
+  icAcilar:     { name: "Çokgen İç Açıları", icon: "🔷", desc: "Çokgenin iç açıları toplamını seç.", run: (s, o) => runConvert(s, o, "Çokgen İç Açıları", POLY_ANGLES) },
+  hacim:        { name: "Cisimlerin Hacmi", icon: "📦", desc: "Katı cismin hacim formülünü seç.", run: (s, o) => runConvert(s, o, "Cisimlerin Hacmi", SOLID_VOLUME) },
+  ozelUcgen:    { name: "Özel Üçgenler", icon: "🔻", desc: "30-60-90 ve 45-45-90 kenar oranları.", run: (s, o) => runConvert(s, o, "Özel Üçgenler", SPECIAL_TRI) },
+  acilar:       { name: "Tümler & Bütünler", icon: "∠", desc: "Bir açının tümleri (90°) ve bütünleri (180°).", run: (s, o) => runAngles(s, o) },
+  ozdeslik:     { name: "Özdeşlikler", icon: "🟰", desc: "Çarpanlara ayırma ve özdeşliklerin açılımı.", run: (s, o) => runConvert(s, o, "Özdeşlikler", IDENTITIES) },
+  usluKural:    { name: "Üslü Sayı Kuralları", icon: "xⁿ", desc: "Üslü sayılarda işlem kurallarının sonucu.", run: (s, o) => runConvert(s, o, "Üslü Sayı Kuralları", EXPONENT_RULES) },
+  kokluKural:   { name: "Köklü Sayı Kuralları", icon: "√x", desc: "Köklü ifadelerde işlem kurallarının sonucu.", run: (s, o) => runConvert(s, o, "Köklü Sayı Kuralları", ROOT_RULES) },
+  seriToplam:   { name: "Ardışık Sayı Toplamları", icon: "∑", desc: "Seri toplam formüllerinin kapalı hâli.", run: (s, o) => runConvert(s, o, "Ardışık Sayı Toplamları", SERIES_SUMS) }
+};
+
+/* Cebir: özdeşlikler / çarpanlara ayırma [ifade, açılım] */
+const IDENTITIES = [
+  ["(a + b)²", "a² + 2ab + b²"],
+  ["(a − b)²", "a² − 2ab + b²"],
+  ["a² − b²", "(a − b)(a + b)"],
+  ["a² + b²", "(a + b)² − 2ab"],
+  ["(a + b)³", "a³ + 3a²b + 3ab² + b³"],
+  ["(a − b)³", "a³ − 3a²b + 3ab² − b³"],
+  ["a³ + b³", "(a + b)(a² − ab + b²)"],
+  ["a³ − b³", "(a − b)(a² + ab + b²)"]
+];
+/* Cebir: üslü sayı kuralları [ifade, sonuç] */
+const EXPONENT_RULES = [
+  ["aⁿ · aᵐ", "aⁿ⁺ᵐ"],
+  ["aⁿ ÷ aᵐ", "aⁿ⁻ᵐ"],
+  ["(aⁿ)ᵐ", "aⁿ·ᵐ"],
+  ["(a · b)ⁿ", "aⁿ · bⁿ"],
+  ["(a / b)ⁿ", "aⁿ / bⁿ"],
+  ["a⁻ⁿ", "1 / aⁿ"],
+  ["a⁰  (a ≠ 0)", "1"],
+  ["a¹", "a"]
+];
+/* Cebir: köklü sayı kuralları [ifade, sonuç] */
+const ROOT_RULES = [
+  ["√a · √b", "√(a · b)"],
+  ["√a ÷ √b", "√(a / b)"],
+  ["√(a²)", "|a|"],
+  ["(√a)²  (a ≥ 0)", "a"],
+  ["a√b + c√b", "(a + c)√b"],
+  ["√(a² · b)  (a ≥ 0)", "a√b"]
+];
+/* Cebir: ardışık sayı toplamları [seri, kapalı formül] */
+const SERIES_SUMS = [
+  ["1 + 2 + 3 + … + n", "n(n + 1) / 2"],
+  ["1 + 3 + 5 + … + (2n − 1)   (ilk n tek)", "n²"],
+  ["2 + 4 + 6 + … + 2n   (ilk n çift)", "n(n + 1)"],
+  ["1² + 2² + 3² + … + n²", "n(n + 1)(2n + 1) / 6"],
+  ["1³ + 2³ + 3³ + … + n³", "[n(n + 1) / 2]²"]
+];
+
+/* Geometri: özel üçgen kenar oranları/uzunlukları [soru, cevap] */
+const SPECIAL_TRI = [
+  ["45-45-90 üçgeninde kenarların oranı", "1 : 1 : √2"],
+  ["30-60-90 üçgeninde kenarların oranı", "1 : √3 : 2"],
+  ["45-45-90 üçgeninde dik kenar a ise hipotenüs", "a√2"],
+  ["Kenarı a olan karenin köşegeni", "a√2"],
+  ["Kenarı a olan eşkenar üçgenin yüksekliği", "a√3 / 2"],
+  ["30-60-90 üçgeninde kısa kenar (30° karşısı) a ise hipotenüs", "2a"],
+  ["30-60-90 üçgeninde kısa kenar a ise uzun kenar (60° karşısı)", "a√3"],
+  ["30-60-90 üçgeninde hipotenüs 2a ise 30° karşısındaki kenar", "a"]
+];
+
+/* Geometri: alan & çevre formülleri [şekil özelliği, formül] */
+const GEO_FORMULA = [
+  ["Karenin alanı", "a²"],
+  ["Karenin çevresi", "4a"],
+  ["Dikdörtgenin alanı", "a · b"],
+  ["Dikdörtgenin çevresi", "2 · (a + b)"],
+  ["Üçgenin alanı", "taban · yükseklik / 2"],
+  ["Paralelkenarın alanı", "taban · yükseklik"],
+  ["Eşkenar üçgenin alanı", "a²√3 / 4"],
+  ["Eşkenar üçgenin çevresi", "3a"],
+  ["Yamuğun alanı", "(a + b) · h / 2"],
+  ["Dairenin alanı", "π · r²"],
+  ["Dairenin çevresi", "2 · π · r"]
+];
+/* Geometri: çokgenlerin iç açıları toplamı [çokgen, toplam] — (n−2)·180 */
+const POLY_ANGLES = [
+  ["Üçgenin iç açıları toplamı", "180°"],
+  ["Dörtgenin iç açıları toplamı", "360°"],
+  ["Beşgenin iç açıları toplamı", "540°"],
+  ["Altıgenin iç açıları toplamı", "720°"],
+  ["Yedigenin iç açıları toplamı", "900°"],
+  ["Sekizgenin iç açıları toplamı", "1080°"],
+  ["Dokuzgenin iç açıları toplamı", "1260°"],
+  ["Ongenin iç açıları toplamı", "1440°"]
+];
+/* Geometri: katı cisimlerin hacmi [cisim, formül] */
+const SOLID_VOLUME = [
+  ["Küpün hacmi", "a³"],
+  ["Dikdörtgenler prizmasının hacmi", "a · b · c"],
+  ["Silindirin hacmi", "π · r² · h"],
+  ["Koninin hacmi", "(1/3) · π · r² · h"],
+  ["Kürenin hacmi", "(4/3) · π · r³"],
+  ["Karesel piramidin hacmi", "taban alanı · h / 3"]
+];
+/* Geometri: Pisagor üçlüleri [dik kenar, dik kenar, hipotenüs] */
+const PYTHAGOREAN = [
+  [3, 4, 5], [6, 8, 10], [5, 12, 13], [8, 15, 17], [7, 24, 25],
+  [20, 21, 29], [9, 12, 15], [9, 40, 41], [12, 16, 20], [10, 24, 26]
+];
+
+/* Bölünebilme kuralları: [bölen, kısa kural]. 10a+b kuralları bölenin adını
+   ANMADAN yazıldı (yoksa cevap kuralın içinde geçer); a = son rakam hariç kısım, b = son rakam. */
+const DIV_RULES = [
+  ["1", "Her tam sayı 1'e bölünür"],
+  ["2", "Son rakamı çift (0, 2, 4, 6, 8) ise bölünür"],
+  ["3", "Rakamları toplamı 3'ün katı ise bölünür"],
+  ["4", "Son iki basamağı 00 veya 4'ün katı ise bölünür"],
+  ["5", "Son rakamı 0 veya 5 ise bölünür"],
+  ["6", "Hem 2'ye hem 3'e tam bölünüyorsa bölünür"],
+  ["7", "Son rakamın 2 katını kalan kısımdan çıkar (a − 2b)"],
+  ["8", "Son üç basamağı 000 veya 8'in katı ise bölünür"],
+  ["9", "Rakamları toplamı 9'un katı ise bölünür"],
+  ["10", "Son rakamı 0 ise bölünür"],
+  ["11", "Rakamların dönüşümlü (+, −, +, −) toplamı 11'in katı ise bölünür"],
+  ["12", "Hem 3'e hem 4'e tam bölünüyorsa bölünür"],
+  ["13", "Son rakamın 4 katını kalan kısma ekle (a + 4b)"],
+  ["14", "Hem 2'ye hem 7'ye tam bölünüyorsa bölünür"],
+  ["15", "Hem 3'e hem 5'e tam bölünüyorsa bölünür"],
+  ["17", "Son rakamın 5 katını kalan kısımdan çıkar (a − 5b)"],
+  ["18", "Hem 2'ye hem 9'a tam bölünüyorsa bölünür"],
+  ["19", "Son rakamın 2 katını kalan kısma ekle (a + 2b)"],
+  ["23", "Son rakamın 7 katını kalan kısma ekle (a + 7b)"],
+  ["24", "Hem 3'e hem 8'e tam bölünüyorsa bölünür"],
+  ["25", "Son iki basamağı 00, 25, 50 veya 75 ise bölünür"]
+];
+
+/* Yüzde-kesir karşılıkları (bilgi kartlarındaki ezber çıpalarıyla aynı) */
+const YUZDE_KESIR = [
+  ["%5", "1/20"], ["%10", "1/10"], ["%12,5", "1/8"], ["%20", "1/5"], ["%25", "1/4"],
+  ["%30", "3/10"], ["%40", "2/5"], ["%50", "1/2"], ["%60", "3/5"], ["%70", "7/10"],
+  ["%75", "3/4"], ["%80", "4/5"], ["%90", "9/10"]
+];
+/* Ondalık-kesir karşılıkları */
+const ONDALIK_KESIR = [
+  ["0,1", "1/10"], ["0,2", "1/5"], ["0,25", "1/4"], ["0,4", "2/5"], ["0,5", "1/2"],
+  ["0,6", "3/5"], ["0,75", "3/4"], ["0,8", "4/5"], ["0,125", "1/8"], ["0,375", "3/8"],
+  ["0,625", "5/8"], ["0,875", "7/8"]
+];
+
+/* ----- MATEMATİK pratikleri (ders/ünite/oyun yapısı yerine düz pratik listesi) ----- */
+const PRACTICES = {
+  matematik: [
+    { id: "carpim", icon: "✖️", name: "Çarpım Tablosu", desc: "1×1'den 10×10'a kadar tüm çarpımlar karışık sorulur. Hızını ölç, eksiklerini gör." },
+    { id: "pow2", icon: "🔢", name: "2'nin Kuvvetleri", desc: "2¹'den 2¹⁰'a kadar (2, 4, 8 … 1024) tüm kuvvetler karışık sorulur." },
+    { id: "pow3", icon: "🔢", name: "3'ün Kuvvetleri", desc: "3¹'den 3⁶'ya kadar (3, 9, 27 … 729) tüm kuvvetler karışık sorulur." },
+    { id: "pow5", icon: "🔢", name: "5'in Kuvvetleri", desc: "5¹'den 5⁵'e kadar (5, 25, 125, 625, 3125) tüm kuvvetler karışık sorulur." },
+    { id: "kupler", icon: "🧊", name: "Küpler", desc: "1³'ten 10³'e kadar (1, 8, 27 … 1000) tüm küpler karışık sorulur." },
+    { id: "faktoriyel", icon: "❗", name: "Faktöriyeller", desc: "0!'den 10!'e kadar (1, 1, 2, 6, 24 … 3.628.800) tüm faktöriyeller karışık sorulur." },
+    { id: "asal", icon: "🔍", name: "Asal mı?", desc: "0–100 arası sayılar karışık gelir; her biri için 'asal mı, değil mi' kararını ver." },
+    { id: "yuzdeKesir", icon: "％", name: "Yüzde → Kesir", desc: "%10 = 1/10, %25 = 1/4 … sık çıkan yüzdelerin kesir karşılığını seç." },
+    { id: "ondalikKesir", icon: "🔟", name: "Ondalık → Kesir", desc: "0,2 = 1/5, 0,75 = 3/4 … ondalık sayıların kesir karşılığını seç." },
+    { id: "bolunebilme", icon: "➗", name: "Bölünebilme Kuralları", desc: "1'den 25'e kadar bölenler karışık gelir; her birinin bölünebilme kuralını seç (2, 3, 4, 5 … 11, 13, 17, 19, 23, 25)." },
+    { id: "karekok", icon: "√", name: "Karekök", desc: "√1'den √400'e kadar tam karelerin (1²–20²) karekökünü bul. √144 = 12 gibi." },
+    { id: "geoFormul", icon: "📐", name: "Alan & Çevre Formülleri", desc: "Kare, dikdörtgen, üçgen, daire, paralelkenar, yamuk… şeklin alan/çevre formülünü seç." },
+    { id: "pisagor", icon: "🔺", name: "Pisagor Üçlüleri", desc: "3-4-5, 5-12-13, 8-15-17… dik üçgende iki kenardan hipotenüsü bul." },
+    { id: "icAcilar", icon: "🔷", name: "Çokgen İç Açıları", desc: "Üçgen 180°, dörtgen 360°, beşgen 540°… (n−2)·180 kuralıyla iç açılar toplamı." },
+    { id: "hacim", icon: "📦", name: "Cisimlerin Hacmi", desc: "Küp, prizma, silindir, koni, küre, piramit… katı cismin hacim formülünü seç." },
+    { id: "ozelUcgen", icon: "🔻", name: "Özel Üçgenler", desc: "30-60-90 (1 : √3 : 2) ve 45-45-90 (1 : 1 : √2) üçgenlerinde kenar oranları ve uzunlukları." },
+    { id: "acilar", icon: "∠", name: "Tümler & Bütünler", desc: "Tümler açılar 90°, bütünler açılar 180°. Verilen açının tümleri/bütünleri kaç derece?" },
+    { id: "ozdeslik", icon: "🟰", name: "Özdeşlikler", desc: "(a+b)², a²−b², a³±b³ … özdeşliklerin açılımını / çarpanlarına ayrılmış hâlini seç." },
+    { id: "usluKural", icon: "xⁿ", name: "Üslü Sayı Kuralları", desc: "aⁿ·aᵐ, (aⁿ)ᵐ, a⁻ⁿ, a⁰ … üslü sayılarda işlem kurallarının sonucunu seç." },
+    { id: "kokluKural", icon: "√x", name: "Köklü Sayı Kuralları", desc: "√a·√b, √(a²), a√b+c√b … köklü ifadelerde işlem kurallarının sonucunu seç." },
+    { id: "seriToplam", icon: "∑", name: "Ardışık Sayı Toplamları", desc: "1+2+…+n, ilk n tek/çift, kareler ve küpler toplamı formüllerini seç." }
+  ]
 };
 
 /* ünite kayıtları (data/units.js'ten) */
@@ -400,8 +586,47 @@ function renderSubject(key) {
   stopTimers();
   current.subject = key;
   document.body.dataset.accent = key;
+  if (PRACTICES[key]) return renderPractices(key);
   if (hasUnits(key)) return renderUnits(key);
   return renderFlatSubject(key);
+}
+
+/* ----- pratik listesi (Matematik: oyun/ünite/deneme yok, sadece pratikler) ----- */
+function renderPractices(key) {
+  stopTimers();
+  current = { subject: key, game: null, opts: {} };
+  document.body.dataset.accent = key;
+  const s = SUBJECTS[key];
+  const xp = save.xp[key] || 0;
+  const { lv } = levelOf(xp);
+
+  const list = PRACTICES[key].map((p) => {
+    const best = save.best[key + ":" + p.id];
+    return `
+      <button class="game-card" data-practice="${p.id}">
+        <div class="game-icon">${p.icon}</div>
+        <div class="game-body"><h3>${p.name}</h3><p>${p.desc}</p></div>
+        <div class="game-best">${best != null ? "🏅 " + best : "—"}</div>
+      </button>`;
+  }).join("");
+
+  app.innerHTML = `
+    <div class="fade">
+      <header class="bar">
+        <button class="btn-back" id="btnBack">←</button>
+        <div class="bar-title">${s.icon} ${s.name}</div>
+        <div class="bar-score">${lv.name} • ${xp} XP</div>
+      </header>
+      <p class="subject-info">${s.tagline}. Soruları çözerken hız kazandıran kısa pratikler.</p>
+      <h2 class="section-title">Pratikler</h2>
+      <div class="game-grid">${list}</div>
+    </div>`;
+
+  $("#btnBack").addEventListener("click", () => { sfx("click"); renderHome(); });
+  document.querySelectorAll(".game-card").forEach((b) =>
+    b.addEventListener("click", () => { sfx("click"); startGame(key, b.dataset.practice, {}); })
+  );
+  renderSoundBtn();
 }
 
 /* ----- ünite haritası (ünite yapısına geçmiş dersler) ----- */
@@ -708,7 +933,9 @@ function runCikmisQuiz(subject, year) {
 function backToContext() {
   const sub = current.subject;
   const o = current.opts || {};
-  if (o.fromCikmis) {
+  if (PRACTICES[sub]) {
+    renderPractices(sub);
+  } else if (o.fromCikmis) {
     renderCikmis(sub);
   } else if (o.fromMix) {
     renderMix(sub);
@@ -850,6 +1077,589 @@ function finishGame(ctx) {
   $("#btnHome").addEventListener("click", () => { sfx("click"); renderHome(); });
   renderSoundBtn();
   window.scrollTo(0, 0);
+}
+
+/* =====================================================
+   PRATİK: ÇARPIM TABLOSU (1×1 – 10×10, tüm çarpımlar)
+   ===================================================== */
+function multiplicationQuestions() {
+  const qs = [];
+  for (let a = 1; a <= 10; a++) {
+    for (let b = 1; b <= 10; b++) qs.push({ a, b });
+  }
+  return shuffle(qs);
+}
+
+/* doğru cevaba yakın, akla yatkın 3 çeldirici üret */
+function multiplicationOptions(a, b) {
+  const correct = a * b;
+  const cand = new Set();
+  const add = (v) => { if (v > 0 && v !== correct) cand.add(v); };
+  add(correct + a); add(correct - a); add(correct + b); add(correct - b);
+  add((a + 1) * b); add(a * (b + 1)); add((a - 1) * b); add(a * (b - 1));
+  add(correct + 1); add(correct - 1); add(correct + 10); add(correct - 10);
+  let guard = 0;
+  while (cand.size < 3 && guard < 60) { add(correct + (Math.floor(Math.random() * 13) - 6)); guard++; }
+  const distract = shuffle([...cand]).slice(0, 3);
+  return shuffle([correct, ...distract]);
+}
+
+function runMultiplication(subject, opts) {
+  opts = opts || {};
+  const qs = multiplicationQuestions();
+  const ctx = { score: 0, max: qs.length * 10, review: [] };
+  let i = 0, streak = 0;
+  const stage = gameFrame("Çarpım Tablosu", "Puan: <b>0</b>");
+
+  function show() {
+    if (i >= qs.length) return finishGame(ctx);
+    setProgress(i, qs.length);
+    const { a, b } = qs[i];
+    const correct = a * b;
+    const options = multiplicationOptions(a, b);
+    stage.innerHTML = `
+      <div class="qcard pop">
+        <div class="qmeta"><span>Soru ${i + 1} / ${qs.length}</span>${streak >= 3 ? `<span class="streak">🔥 ${streak} seri</span>` : ""}</div>
+        <h2 class="qtext" style="font-size:2.4rem">${a} × ${b} = ?</h2>
+        <div class="opts">
+          ${options.map((v, k) => `<button class="opt" data-k="${k}">${v}</button>`).join("")}
+        </div>
+      </div>`;
+
+    const btns = [...stage.querySelectorAll(".opt")];
+    btns.forEach((btn) => btn.addEventListener("click", () => {
+      btns.forEach((x) => (x.disabled = true));
+      const pick = options[+btn.dataset.k];
+      const okBtn = btns[options.findIndex((v) => v === correct)];
+      okBtn.classList.add("correct");
+      let delay;
+      if (pick === correct) {
+        streak++; ctx.score += 10; sfx("ok"); delay = 550;
+      } else {
+        btn.classList.add("wrong"); streak = 0; sfx("bad"); delay = 1300;
+        ctx.review.push({ q: `${a} × ${b}`, a: String(correct), exp: `${a} × ${b} = ${correct}` });
+      }
+      setHud(`Puan: <b>${ctx.score}</b>`);
+      addTimer(setTimeout(() => { i++; show(); }, delay));
+    }));
+  }
+  show();
+}
+
+/* =====================================================
+   PRATİK: BİR SAYININ KUVVETLERİ (genel — örn. 2¹–2¹⁰)
+   ===================================================== */
+/* üs için Unicode üst-simge (örn. 10 -> "¹⁰") */
+function superscript(n) {
+  const map = { "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹" };
+  return String(n).split("").map((d) => map[d] || d).join("");
+}
+
+/* doğru cevaba yakın, akla yatkın 3 çeldirici üret */
+function powerOptions(base, exp) {
+  const correct = Math.pow(base, exp);
+  const cand = new Set();
+  const add = (v) => { if (v > 0 && Number.isInteger(v) && v !== correct) cand.add(v); };
+  add(Math.pow(base, exp - 1));        // bir önceki kuvvet
+  add(Math.pow(base, exp + 1));        // bir sonraki kuvvet
+  add(base * exp);                     // sık hata: tabanı üsle çarpma (2×3=6)
+  add(correct * 2); add(correct / 2);
+  add(correct + Math.pow(base, exp - 1));
+  add(correct - Math.pow(base, exp - 1));
+  let guard = 0;
+  while (cand.size < 3 && guard < 60) { add(correct + (Math.floor(Math.random() * 13) - 6)); guard++; }
+  const distract = shuffle([...cand]).slice(0, 3);
+  return shuffle([correct, ...distract]);
+}
+
+function runPowers(subject, opts, base, maxExp) {
+  opts = opts || {};
+  const qs = shuffle(Array.from({ length: maxExp }, (_, k) => k + 1)); // üsler 1..maxExp
+  const ctx = { score: 0, max: qs.length * 10, review: [] };
+  let i = 0, streak = 0;
+  const stage = gameFrame(`${base}'nin Kuvvetleri`, "Puan: <b>0</b>");
+
+  function show() {
+    if (i >= qs.length) return finishGame(ctx);
+    setProgress(i, qs.length);
+    const exp = qs[i];
+    const correct = Math.pow(base, exp);
+    const options = powerOptions(base, exp);
+    stage.innerHTML = `
+      <div class="qcard pop">
+        <div class="qmeta"><span>Soru ${i + 1} / ${qs.length}</span>${streak >= 3 ? `<span class="streak">🔥 ${streak} seri</span>` : ""}</div>
+        <h2 class="qtext" style="font-size:2.4rem">${base}${superscript(exp)} = ?</h2>
+        <div class="opts">
+          ${options.map((v, k) => `<button class="opt" data-k="${k}">${v}</button>`).join("")}
+        </div>
+      </div>`;
+
+    const btns = [...stage.querySelectorAll(".opt")];
+    btns.forEach((btn) => btn.addEventListener("click", () => {
+      btns.forEach((x) => (x.disabled = true));
+      const pick = options[+btn.dataset.k];
+      const okBtn = btns[options.findIndex((v) => v === correct)];
+      okBtn.classList.add("correct");
+      let delay;
+      if (pick === correct) {
+        streak++; ctx.score += 10; sfx("ok"); delay = 550;
+      } else {
+        btn.classList.add("wrong"); streak = 0; sfx("bad"); delay = 1300;
+        ctx.review.push({ q: `${base}${superscript(exp)}`, a: String(correct), exp: `${base}${superscript(exp)} = ${correct}` });
+      }
+      setHud(`Puan: <b>${ctx.score}</b>`);
+      addTimer(setTimeout(() => { i++; show(); }, delay));
+    }));
+  }
+  show();
+}
+
+/* =====================================================
+   PRATİK: KÜPLER (1³ – 10³)
+   ===================================================== */
+/* doğru cevaba yakın, akla yatkın 3 çeldirici üret */
+function cubeOptions(n) {
+  const correct = n * n * n;
+  const cand = new Set();
+  const add = (v) => { if (v > 0 && Number.isInteger(v) && v !== correct) cand.add(v); };
+  add(n * n);                          // sık hata: küp yerine kare
+  add((n - 1) * (n - 1) * (n - 1));    // bir önceki küp
+  add((n + 1) * (n + 1) * (n + 1));    // bir sonraki küp
+  add(n * 3);                          // sık hata: tabanı 3 ile çarpma
+  add(correct + n * n); add(correct - n * n);
+  add(correct + 1); add(correct - 1);
+  let guard = 0;
+  while (cand.size < 3 && guard < 60) { add(correct + (Math.floor(Math.random() * 21) - 10)); guard++; }
+  const distract = shuffle([...cand]).slice(0, 3);
+  return shuffle([correct, ...distract]);
+}
+
+function runCubes(subject, opts, maxN) {
+  opts = opts || {};
+  const qs = shuffle(Array.from({ length: maxN }, (_, k) => k + 1)); // tabanlar 1..maxN
+  const ctx = { score: 0, max: qs.length * 10, review: [] };
+  let i = 0, streak = 0;
+  const stage = gameFrame("Küpler", "Puan: <b>0</b>");
+
+  function show() {
+    if (i >= qs.length) return finishGame(ctx);
+    setProgress(i, qs.length);
+    const n = qs[i];
+    const correct = n * n * n;
+    const options = cubeOptions(n);
+    stage.innerHTML = `
+      <div class="qcard pop">
+        <div class="qmeta"><span>Soru ${i + 1} / ${qs.length}</span>${streak >= 3 ? `<span class="streak">🔥 ${streak} seri</span>` : ""}</div>
+        <h2 class="qtext" style="font-size:2.4rem">${n}${superscript(3)} = ?</h2>
+        <div class="opts">
+          ${options.map((v, k) => `<button class="opt" data-k="${k}">${v}</button>`).join("")}
+        </div>
+      </div>`;
+
+    const btns = [...stage.querySelectorAll(".opt")];
+    btns.forEach((btn) => btn.addEventListener("click", () => {
+      btns.forEach((x) => (x.disabled = true));
+      const pick = options[+btn.dataset.k];
+      const okBtn = btns[options.findIndex((v) => v === correct)];
+      okBtn.classList.add("correct");
+      let delay;
+      if (pick === correct) {
+        streak++; ctx.score += 10; sfx("ok"); delay = 550;
+      } else {
+        btn.classList.add("wrong"); streak = 0; sfx("bad"); delay = 1300;
+        ctx.review.push({ q: `${n}${superscript(3)}`, a: String(correct), exp: `${n}${superscript(3)} = ${correct}` });
+      }
+      setHud(`Puan: <b>${ctx.score}</b>`);
+      addTimer(setTimeout(() => { i++; show(); }, delay));
+    }));
+  }
+  show();
+}
+
+/* =====================================================
+   PRATİK: FAKTÖRİYELLER (0! – 10!)
+   ===================================================== */
+function factorial(n) { let r = 1; for (let k = 2; k <= n; k++) r *= k; return r; }
+
+/* doğru cevaba yakın, akla yatkın 3 çeldirici üret (komşu faktöriyeller iyi çeldiricidir) */
+function factorialOptions(n) {
+  const correct = factorial(n);
+  const cand = new Set();
+  const add = (v) => { if (v > 0 && Number.isInteger(v) && v !== correct) cand.add(v); };
+  for (let k = 1; k <= 4; k++) { add(factorial(n + k)); if (n - k >= 0) add(factorial(n - k)); }
+  add(n * n); add(correct + factorial(Math.max(0, n - 1))); add(correct - factorial(Math.max(0, n - 1)));
+  let guard = 0;
+  while (cand.size < 3 && guard < 60) { add(correct + (Math.floor(Math.random() * 13) - 6)); guard++; }
+  const distract = shuffle([...cand]).slice(0, 3);
+  return shuffle([correct, ...distract]);
+}
+
+function runFactorials(subject, opts, maxN) {
+  opts = opts || {};
+  const qs = shuffle(Array.from({ length: maxN + 1 }, (_, k) => k)); // 0..maxN
+  const ctx = { score: 0, max: qs.length * 10, review: [] };
+  let i = 0, streak = 0;
+  const stage = gameFrame("Faktöriyeller", "Puan: <b>0</b>");
+
+  function show() {
+    if (i >= qs.length) return finishGame(ctx);
+    setProgress(i, qs.length);
+    const n = qs[i];
+    const correct = factorial(n);
+    const options = factorialOptions(n);
+    stage.innerHTML = `
+      <div class="qcard pop">
+        <div class="qmeta"><span>Soru ${i + 1} / ${qs.length}</span>${streak >= 3 ? `<span class="streak">🔥 ${streak} seri</span>` : ""}</div>
+        <h2 class="qtext" style="font-size:2.4rem">${n}! = ?</h2>
+        <div class="opts">
+          ${options.map((v, k) => `<button class="opt" data-k="${k}">${v.toLocaleString("tr-TR")}</button>`).join("")}
+        </div>
+      </div>`;
+
+    const btns = [...stage.querySelectorAll(".opt")];
+    btns.forEach((btn) => btn.addEventListener("click", () => {
+      btns.forEach((x) => (x.disabled = true));
+      const pick = options[+btn.dataset.k];
+      const okBtn = btns[options.findIndex((v) => v === correct)];
+      okBtn.classList.add("correct");
+      let delay;
+      if (pick === correct) {
+        streak++; ctx.score += 10; sfx("ok"); delay = 550;
+      } else {
+        btn.classList.add("wrong"); streak = 0; sfx("bad"); delay = 1300;
+        const expN = n === 0 ? "0! = 1 (tanım gereği)" : `${n}! = ${n}×${n - 1}×…×1 = ${correct.toLocaleString("tr-TR")}`;
+        ctx.review.push({ q: `${n}!`, a: correct.toLocaleString("tr-TR"), exp: expN });
+      }
+      setHud(`Puan: <b>${ctx.score}</b>`);
+      addTimer(setTimeout(() => { i++; show(); }, delay));
+    }));
+  }
+  show();
+}
+
+/* =====================================================
+   PRATİK: ASAL MI? (0–100 arası, ikili karar)
+   ===================================================== */
+function isPrime(n) {
+  if (n < 2) return false;
+  for (let i = 2; i * i <= n; i++) { if (n % i === 0) return false; }
+  return true;
+}
+function smallestFactor(n) {
+  for (let i = 2; i * i <= n; i++) { if (n % i === 0) return i; }
+  return n;
+}
+/* asal olmama/olma açıklaması */
+function primeExp(n) {
+  if (n === 0 || n === 1) return `${n} asal değildir; asal sayı 1'den büyük olmalıdır.`;
+  if (isPrime(n)) return `${n} yalnızca 1'e ve kendisine bölünür, asaldır.`;
+  const f = smallestFactor(n);
+  return `${n} = ${f} × ${n / f} olduğundan asal değildir.`;
+}
+
+function runPrime(subject, opts) {
+  opts = opts || {};
+  // 0–100 arasından karışık 25 sayı; "yalancı asal" tuzakları da havuzda
+  const pool = Array.from({ length: 101 }, (_, k) => k);
+  const qs = shuffle(pool).slice(0, 25);
+  const ctx = { score: 0, max: qs.length * 10, review: [] };
+  let i = 0, streak = 0;
+  const stage = gameFrame("Asal mı?", "Puan: <b>0</b>");
+
+  function show() {
+    if (i >= qs.length) return finishGame(ctx);
+    setProgress(i, qs.length);
+    const n = qs[i];
+    const prime = isPrime(n);
+    stage.innerHTML = `
+      <div class="qcard pop">
+        <div class="qmeta"><span>Soru ${i + 1} / ${qs.length}</span>${streak >= 3 ? `<span class="streak">🔥 ${streak} seri</span>` : ""}</div>
+        <h2 class="qtext" style="font-size:2.8rem">${n}</h2>
+        <p style="text-align:center;opacity:.7;margin:-.4rem 0 .6rem">Bu sayı asal mı?</p>
+        <div class="opts">
+          <button class="opt" data-v="1">✓ Asaldır</button>
+          <button class="opt" data-v="0">✗ Asal değil</button>
+        </div>
+      </div>`;
+
+    const btns = [...stage.querySelectorAll(".opt")];
+    btns.forEach((btn) => btn.addEventListener("click", () => {
+      btns.forEach((x) => (x.disabled = true));
+      const pick = btn.dataset.v === "1";
+      const okBtn = btns[prime ? 0 : 1];
+      okBtn.classList.add("correct");
+      let delay;
+      if (pick === prime) {
+        streak++; ctx.score += 10; sfx("ok"); delay = 650;
+      } else {
+        btn.classList.add("wrong"); streak = 0; sfx("bad"); delay = 1600;
+        ctx.review.push({ q: `${n} asal mı?`, a: prime ? "Asaldır" : "Asal değil", exp: primeExp(n) });
+      }
+      setHud(`Puan: <b>${ctx.score}</b>`);
+      addTimer(setTimeout(() => { i++; show(); }, delay));
+    }));
+  }
+  show();
+}
+
+/* =====================================================
+   PRATİK: DÖNÜŞÜM (yüzde→kesir, ondalık→kesir) — genel
+   pairs: [[soru, cevap], ...] — cevaplar şık havuzunu oluşturur
+   ===================================================== */
+function runConvert(subject, opts, title, pairs) {
+  opts = opts || {};
+  const answers = pairs.map((p) => p[1]); // çeldirici havuzu = tüm cevaplar
+  const qs = shuffle(pairs.slice());
+  const ctx = { score: 0, max: qs.length * 10, review: [] };
+  let i = 0, streak = 0;
+  const stage = gameFrame(title, "Puan: <b>0</b>");
+
+  function show() {
+    if (i >= qs.length) return finishGame(ctx);
+    setProgress(i, qs.length);
+    const [prompt, correct] = qs[i];
+    const distract = shuffle(answers.filter((a) => a !== correct)).slice(0, 3);
+    const options = shuffle([correct, ...distract]);
+    stage.innerHTML = `
+      <div class="qcard pop">
+        <div class="qmeta"><span>Soru ${i + 1} / ${qs.length}</span>${streak >= 3 ? `<span class="streak">🔥 ${streak} seri</span>` : ""}</div>
+        <h2 class="qtext" style="font-size:2.4rem">${prompt} = ?</h2>
+        <div class="opts">
+          ${options.map((v, k) => `<button class="opt" data-k="${k}">${v}</button>`).join("")}
+        </div>
+      </div>`;
+
+    const btns = [...stage.querySelectorAll(".opt")];
+    btns.forEach((btn) => btn.addEventListener("click", () => {
+      btns.forEach((x) => (x.disabled = true));
+      const pick = options[+btn.dataset.k];
+      const okBtn = btns[options.findIndex((v) => v === correct)];
+      okBtn.classList.add("correct");
+      let delay;
+      if (pick === correct) {
+        streak++; ctx.score += 10; sfx("ok"); delay = 600;
+      } else {
+        btn.classList.add("wrong"); streak = 0; sfx("bad"); delay = 1400;
+        ctx.review.push({ q: `${prompt} = ?`, a: correct, exp: `${prompt} = ${correct}` });
+      }
+      setHud(`Puan: <b>${ctx.score}</b>`);
+      addTimer(setTimeout(() => { i++; show(); }, delay));
+    }));
+  }
+  show();
+}
+
+/* =====================================================
+   PRATİK: BÖLÜNEBİLME KURALLARI (sayı → kural)
+   ===================================================== */
+function runDivisibility(subject, opts) {
+  opts = opts || {};
+  const rules = DIV_RULES.map((p) => p[1]); // çeldirici havuzu = tüm kurallar
+  const qs = shuffle(DIV_RULES.slice());
+  const ctx = { score: 0, max: qs.length * 10, review: [] };
+  let i = 0, streak = 0;
+  const stage = gameFrame("Bölünebilme Kuralları", "Puan: <b>0</b>");
+
+  function show() {
+    if (i >= qs.length) return finishGame(ctx);
+    setProgress(i, qs.length);
+    const [num, correct] = qs[i];
+    const distract = shuffle(rules.filter((r) => r !== correct)).slice(0, 3);
+    const options = shuffle([correct, ...distract]);
+    stage.innerHTML = `
+      <div class="qcard pop">
+        <div class="qmeta"><span>Soru ${i + 1} / ${qs.length}</span>${streak >= 3 ? `<span class="streak">🔥 ${streak} seri</span>` : ""}</div>
+        <h2 class="qtext"><b style="font-size:2.4rem">${num}</b> ile bölünebilme kuralı?</h2>
+        <div class="opts">
+          ${options.map((v, k) => `<button class="opt" data-k="${k}">${v}</button>`).join("")}
+        </div>
+      </div>`;
+
+    const btns = [...stage.querySelectorAll(".opt")];
+    btns.forEach((btn) => btn.addEventListener("click", () => {
+      btns.forEach((x) => (x.disabled = true));
+      const pick = options[+btn.dataset.k];
+      const okBtn = btns[options.findIndex((v) => v === correct)];
+      okBtn.classList.add("correct");
+      let delay;
+      if (pick === correct) {
+        streak++; ctx.score += 10; sfx("ok"); delay = 700;
+      } else {
+        btn.classList.add("wrong"); streak = 0; sfx("bad"); delay = 1800;
+        ctx.review.push({ q: `${num} ile bölünebilme kuralı`, a: correct, exp: `${num}: ${correct}.` });
+      }
+      setHud(`Puan: <b>${ctx.score}</b>`);
+      addTimer(setTimeout(() => { i++; show(); }, delay));
+    }));
+  }
+  show();
+}
+
+/* =====================================================
+   PRATİK: KAREKÖK (tam kareler √1 – √400)
+   ===================================================== */
+/* doğru köke yakın, akla yatkın 3 çeldirici (komşu tam sayılar) */
+function rootOptions(n) {
+  const cand = new Set();
+  const add = (v) => { if (v > 0 && v !== n) cand.add(v); };
+  add(n - 1); add(n + 1); add(n - 2); add(n + 2); add(n - 3); add(n + 3);
+  const distract = shuffle([...cand]).slice(0, 3);
+  return shuffle([n, ...distract]);
+}
+
+function runSquareRoots(subject, opts, maxN) {
+  opts = opts || {};
+  const qs = shuffle(Array.from({ length: maxN }, (_, k) => k + 1)); // kökler 1..maxN
+  const ctx = { score: 0, max: qs.length * 10, review: [] };
+  let i = 0, streak = 0;
+  const stage = gameFrame("Karekök", "Puan: <b>0</b>");
+
+  function show() {
+    if (i >= qs.length) return finishGame(ctx);
+    setProgress(i, qs.length);
+    const n = qs[i];
+    const square = n * n;
+    const options = rootOptions(n);
+    stage.innerHTML = `
+      <div class="qcard pop">
+        <div class="qmeta"><span>Soru ${i + 1} / ${qs.length}</span>${streak >= 3 ? `<span class="streak">🔥 ${streak} seri</span>` : ""}</div>
+        <h2 class="qtext" style="font-size:2.4rem">√${square} = ?</h2>
+        <div class="opts">
+          ${options.map((v, k) => `<button class="opt" data-k="${k}">${v}</button>`).join("")}
+        </div>
+      </div>`;
+
+    const btns = [...stage.querySelectorAll(".opt")];
+    btns.forEach((btn) => btn.addEventListener("click", () => {
+      btns.forEach((x) => (x.disabled = true));
+      const pick = options[+btn.dataset.k];
+      const okBtn = btns[options.findIndex((v) => v === n)];
+      okBtn.classList.add("correct");
+      let delay;
+      if (pick === n) {
+        streak++; ctx.score += 10; sfx("ok"); delay = 550;
+      } else {
+        btn.classList.add("wrong"); streak = 0; sfx("bad"); delay = 1300;
+        ctx.review.push({ q: `√${square}`, a: String(n), exp: `${n}² = ${square} olduğundan √${square} = ${n}.` });
+      }
+      setHud(`Puan: <b>${ctx.score}</b>`);
+      addTimer(setTimeout(() => { i++; show(); }, delay));
+    }));
+  }
+  show();
+}
+
+/* =====================================================
+   PRATİK: PİSAGOR ÜÇLÜLERİ (iki dik kenardan hipotenüs)
+   ===================================================== */
+function pythagorasOptions(a, b, c) {
+  const cand = new Set();
+  const add = (v) => { if (v > 0 && Number.isInteger(v) && v !== c) cand.add(v); };
+  add(a + b);            // klasik hata: kenarları toplama
+  add(c - 1); add(c + 1); add(c - 2); add(c + 2);
+  let guard = 0;
+  while (cand.size < 3 && guard < 40) { add(c + (Math.floor(Math.random() * 9) - 4)); guard++; }
+  const distract = shuffle([...cand]).slice(0, 3);
+  return shuffle([c, ...distract]);
+}
+
+function runPythagoras(subject, opts) {
+  opts = opts || {};
+  const qs = shuffle(PYTHAGOREAN.slice());
+  const ctx = { score: 0, max: qs.length * 10, review: [] };
+  let i = 0, streak = 0;
+  const stage = gameFrame("Pisagor Üçlüleri", "Puan: <b>0</b>");
+
+  function show() {
+    if (i >= qs.length) return finishGame(ctx);
+    setProgress(i, qs.length);
+    const [a, b, c] = qs[i];
+    const options = pythagorasOptions(a, b, c);
+    stage.innerHTML = `
+      <div class="qcard pop">
+        <div class="qmeta"><span>Soru ${i + 1} / ${qs.length}</span>${streak >= 3 ? `<span class="streak">🔥 ${streak} seri</span>` : ""}</div>
+        <h2 class="qtext">Dik kenarları <b>${a}</b> ve <b>${b}</b> olan dik üçgenin hipotenüsü = ?</h2>
+        <div class="opts">
+          ${options.map((v, k) => `<button class="opt" data-k="${k}">${v}</button>`).join("")}
+        </div>
+      </div>`;
+
+    const btns = [...stage.querySelectorAll(".opt")];
+    btns.forEach((btn) => btn.addEventListener("click", () => {
+      btns.forEach((x) => (x.disabled = true));
+      const pick = options[+btn.dataset.k];
+      const okBtn = btns[options.findIndex((v) => v === c)];
+      okBtn.classList.add("correct");
+      let delay;
+      if (pick === c) {
+        streak++; ctx.score += 10; sfx("ok"); delay = 650;
+      } else {
+        btn.classList.add("wrong"); streak = 0; sfx("bad"); delay = 1700;
+        ctx.review.push({ q: `Dik kenarlar ${a} ve ${b}, hipotenüs?`, a: String(c), exp: `${a}² + ${b}² = ${a * a} + ${b * b} = ${c * c} = ${c}² olduğundan hipotenüs ${c}'dir.` });
+      }
+      setHud(`Puan: <b>${ctx.score}</b>`);
+      addTimer(setTimeout(() => { i++; show(); }, delay));
+    }));
+  }
+  show();
+}
+
+/* =====================================================
+   PRATİK: TÜMLER & BÜTÜNLER (tümler 90°, bütünler 180°)
+   ===================================================== */
+function runAngles(subject, opts) {
+  opts = opts || {};
+  // 20 soru: yarısı tümler (90°), yarısı bütünler (180°); açılar 5'in katı
+  const qs = shuffle(Array.from({ length: 20 }, (_, k) => {
+    const type = k % 2 === 0 ? "tumler" : "butunler";
+    const max = type === "tumler" ? 85 : 175;
+    const angle = 5 * (1 + Math.floor(Math.random() * (max / 5)));
+    return { type, angle };
+  }));
+  const ctx = { score: 0, max: qs.length * 10, review: [] };
+  let i = 0, streak = 0;
+  const stage = gameFrame("Tümler & Bütünler", "Puan: <b>0</b>");
+
+  function show() {
+    if (i >= qs.length) return finishGame(ctx);
+    setProgress(i, qs.length);
+    const { type, angle } = qs[i];
+    const total = type === "tumler" ? 90 : 180;
+    const correct = total - angle;
+    const wrongRule = (type === "tumler" ? 180 : 90) - angle; // klasik karışıklık
+    const cand = new Set();
+    const add = (v) => { if (v > 0 && v < 180 && v !== correct) cand.add(v); };
+    add(wrongRule); add(correct + 5); add(correct - 5); add(correct + 10); add(correct - 10);
+    add(angle); add(correct + 15); add(correct + 20); // kenar durumlar için yedek çeldirici
+    const options = shuffle([correct, ...shuffle([...cand]).slice(0, 3)]);
+    const label = type === "tumler" ? "tümleri" : "bütünleri";
+    stage.innerHTML = `
+      <div class="qcard pop">
+        <div class="qmeta"><span>Soru ${i + 1} / ${qs.length}</span>${streak >= 3 ? `<span class="streak">🔥 ${streak} seri</span>` : ""}</div>
+        <h2 class="qtext" style="font-size:2rem"><b>${angle}°</b> açısının <b>${label}</b> kaç derecedir?</h2>
+        <div class="opts">
+          ${options.map((v, k) => `<button class="opt" data-k="${k}">${v}°</button>`).join("")}
+        </div>
+      </div>`;
+
+    const btns = [...stage.querySelectorAll(".opt")];
+    btns.forEach((btn) => btn.addEventListener("click", () => {
+      btns.forEach((x) => (x.disabled = true));
+      const pick = options[+btn.dataset.k];
+      const okBtn = btns[options.findIndex((v) => v === correct)];
+      okBtn.classList.add("correct");
+      let delay;
+      if (pick === correct) {
+        streak++; ctx.score += 10; sfx("ok"); delay = 650;
+      } else {
+        btn.classList.add("wrong"); streak = 0; sfx("bad"); delay = 1700;
+        ctx.review.push({ q: `${angle}° açısının ${label}`, a: `${correct}°`, exp: `${type === "tumler" ? "Tümler açılar toplamı 90°'dir" : "Bütünler açılar toplamı 180°'dir"}: ${total} − ${angle} = ${correct}°.` });
+      }
+      setHud(`Puan: <b>${ctx.score}</b>`);
+      addTimer(setTimeout(() => { i++; show(); }, delay));
+    }));
+  }
+  show();
 }
 
 /* =====================================================

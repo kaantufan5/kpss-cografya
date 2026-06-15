@@ -4,7 +4,9 @@ Bu dosya, bu depoda çalışan Claude Code (veya başka bir AI asistanı) için 
 
 ## Proje nedir
 
-**KPSS Arena** — KPSS Genel Kültür sınavına hazırlananlar için **Tarih, Coğrafya ve Vatandaşlık** derslerini tek çatı altında toplayan, tamamen çevrimdışı çalışan interaktif eğitici oyun platformu. Kullanıcı ana sayfadan dersi seçer, derse özel oyunlar listelenir, oynayarak öğrenir.
+**KPSS Arena** — KPSS sınavına hazırlananlar için **Tarih, Coğrafya, Vatandaşlık (Genel Kültür) ve Matematik** derslerini tek çatı altında toplayan, tamamen çevrimdışı çalışan interaktif eğitici oyun platformu. Kullanıcı ana sayfadan dersi seçer, derse özel oyunlar listelenir, oynayarak öğrenir.
+
+> **Matematik dersi diğerlerinden farklıdır:** Konu anlatımı/problem çözümü değil, soruları çözerken hız kazandıran **ezber ve pratik** bilgileridir (çarpım tablosu, kareler, küpler, üsler, faktöriyeller, asal sayılar, karekök tahmini, bölünebilme kuralları, yüzde-kesir-ondalık dönüşümleri, devirli kesirler vb.). Yeni içerik eklerken bu "hızlı tekrar/flashcard" ruhunu koru — kısa, doğrudan "X = ?" tarzı sorular ve hatırlatıcı `cards` tercih edilir; uzun problem metinlerinden kaçın. **Bilinçli olarak sade tutulur:** `SUBJECTS.matematik.games = ["cards", "quiz"]` — sadece kapsamlı "Önce Öğren" başvuru kartları ve karışık quiz (ünite içinde, "Tüm Matematik Oyunları" ve "Deneme Sınavı" ile karışık test). tf/match/memory/box/groups gibi diğer oyun türleri bu derste YOK; yeni matematik içeriği eklerken bunları geri getirme.
 
 - **Yapı:** Bağımlılığı olmayan saf **vanilla JS + HTML + CSS**. Build adımı, framework, paket yöneticisi YOK.
 - **Çalıştırma:** [index.html](index.html) dosyasını bir tarayıcıda açmak yeterli (çift tıkla). Sunucu gerekmez; tüm script'ler `file://` üzerinden `<script>` etiketleriyle yüklenir. **PWA olarak da kurulabilir** (HTTPS'te; bkz. PWA bölümü).
@@ -13,11 +15,13 @@ Bu dosya, bu depoda çalışan Claude Code (veya başka bir AI asistanı) için 
 
 ### Mimari durum (ünite + seviye geçişi)
 
-Üç ders de **ünite (konu) + zorluk seviyesi** yapısına geçti (geçiş tamamlandı):
+Genel Kültür dersleri (Tarih, Coğrafya, Vatandaşlık) **ünite (konu) + zorluk seviyesi** yapısına geçti (geçiş tamamlandı):
 
 - **Tarih:** ✅ 12 ünite. **Coğrafya:** ✅ 9 ünite. **Vatandaşlık:** ✅ 9 ünite.
 - Her ünite 3 seviyede (1 Temel / 2 Pekiştirme / 3 Sınav), öncül (I-II-III) soruları, gruplara ayırma ve deneme sınavı dâhil. Her ünite/seviyede en az bir oynanabilir oyun bulunur (ölü tier yok).
 - **Geriye uyumluluk hâlâ korunuyor:** `data/units.js`'te bir dersin ünite listesi boşaltılırsa o ders otomatik olarak eski **düz oyun listesi** akışına (`renderFlatSubject`) düşer. Etiketsiz öğeler `unit:"genel"`, `level:2` sayılır.
+
+**Matematik:** ✅ 2 ünite (`uslu-koklu`, `kesir-yuzde-ondalik`), aynı ünite+seviye yapısını kullanır ama **konu** değil **ezber/hız pratiği** içerir ve oyun seti bilinçli olarak `cards` + `quiz` ile sınırlıdır (bkz. yukarıdaki not).
 
 ## Dosya yapısı
 
@@ -29,6 +33,7 @@ data/units.js           # ÜNİTE kayıtları: window.KPSS_DATA._units[ders] = [
 data/tarih.js           # Tarih içeriği (üniteye+seviyeye göre etiketli)
 data/cografya.js        # Coğrafya içeriği (nüfus = TÜİK 2025) — üniteye+seviyeye etiketli
 data/vatandaslik.js     # Vatandaşlık içeriği (1982 Anayasası, 2017) — üniteye+seviyeye etiketli
+data/matematik.js       # Matematik ezber/pratik içeriği (kareler, küpler, yüzde-kesir-ondalik vb.) — üniteye+seviyeye etiketli
 manifest.webmanifest    # PWA manifesti (ad, ikonlar, standalone)
 sw.js                   # Service worker (cache-first, çevrimdışı). CACHE sürümünü bump et!
 icons/icon-192.png      # PWA ikonları (tools/gen-icons.js ile üretildi)
@@ -38,7 +43,7 @@ test-data.js            # Node ile çalışan veri bütünlüğü testi (tarayı
 ```
 
 `data/*.js` dosyaları global `window.KPSS_DATA` nesnesini doldurur:
-`window.KPSS_DATA.tarih`, `.cografya`, `.vatandaslik` (içerik) ve `._units` (ünite kayıtları).
+`window.KPSS_DATA.tarih`, `.cografya`, `.vatandaslik`, `.matematik` (içerik) ve `._units` (ünite kayıtları).
 app.js bu global'i `KPSS_DATA` / `UNITS` olarak okur. **index.html'de `data/units.js` diğer data dosyalarıyla app.js arasında yüklenir.**
 
 ## Oyunlar ve hangi veri alanını kullandıkları
@@ -149,7 +154,7 @@ Bu değerleri güncellerken hem `data/cografya.js`/`data/vatandaslik.js` içinde
 - Puanlama: çoğu oyunda doğru = +10, `max` = öğe sayısı × 10. `clues` kademeli (30/20/10). `match` yanlışta -2.
 - Zamanlayıcılar `addTimer()` ile kaydedilir, ekran değişiminde `stopTimers()` ile temizlenir — yeni `setInterval`/`setTimeout` eklerken bunu kullan (sızıntı/çift tetikleme önlemi).
 - Ses: Web Audio API ile sentezlenir (ses dosyası yok), `sfx(kind)` ile çağrılır, `save.sound` ile kapatılabilir.
-- Tema: `document.body.dataset.accent` derse göre CSS değişkeni (`--accent`) değiştirir. tarih=sarı, cografya=yeşil, vatandaslik=kırmızı.
+- Tema: `document.body.dataset.accent` derse göre CSS değişkeni (`--accent`) değiştirir. tarih=sarı, cografya=yeşil, vatandaslik=kırmızı, matematik=mavi.
 - Harita: `REGIONS` nesnesinde her bölgenin şematik SVG `path` verisi ve etiket konumu var. Harita bilinçli olarak **şematik/temsilî** — gerçek sınır çizmeye çalışıp yanlış öğretmekten kaçınıldı (haritada da bu not yazılı).
 
 ## PWA ve yayın (Netlify)

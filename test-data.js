@@ -5,6 +5,7 @@ require("./data/turkiye-harita.js");
 require("./data/tarih.js");
 require("./data/cografya.js");
 require("./data/vatandaslik.js");
+require("./data/matematik.js");
 const D = global.window.KPSS_DATA;
 const UNITS = D._units || {};
 let errors = [];
@@ -12,7 +13,7 @@ let errors = [];
 const MAP = D._map || { regions: {}, provinces: [] };
 const regions = Object.keys(MAP.regions);
 const provinceNames = new Set(MAP.provinces.map((p) => p.name));
-const SUBJECTS = ["tarih", "cografya", "vatandaslik"];
+const SUBJECTS = ["tarih", "cografya", "vatandaslik", "matematik"];
 const LEVELED_FIELDS = ["quiz", "oncul", "tf", "clues", "numbers", "enler", "iller"];
 
 function unitIds(subj) { return (UNITS[subj] || []).map((u) => u.id); }
@@ -62,14 +63,14 @@ for (const subj of SUBJECTS) {
   });
 
   // tf
-  d.tf.forEach((q, i) => {
+  if (d.tf) d.tf.forEach((q, i) => {
     const loc = `${subj}.tf[${i}]`;
     if (typeof q.t !== "boolean" || !q.s || !q.exp) errors.push(`${loc}: alan eksik`);
     chkTag(loc, q);
   });
 
   // match: tur içinde sağ ve sol değerler benzersiz olmalı
-  d.match.forEach((r, i) => {
+  if (d.match) d.match.forEach((r, i) => {
     const loc = `${subj}.match[${i}] (${r.title})`;
     const lefts = r.pairs.map((p) => p[0]), rights = r.pairs.map((p) => p[1]);
     if (new Set(lefts).size !== lefts.length) errors.push(`${loc}: tekrar eden sol değer`);

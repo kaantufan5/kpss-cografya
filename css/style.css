@@ -57,11 +57,17 @@ body[data-accent="cografya"] {
   --accent-soft: rgba(16, 185, 129, 0.12); 
   --accent-glow: rgba(16, 185, 129, 0.25);
 }
-body[data-accent="vatandaslik"] { 
-  --accent: #f43f5e; 
+body[data-accent="vatandaslik"] {
+  --accent: #f43f5e;
   --accent-rgb: 244, 63, 94;
-  --accent-soft: rgba(244, 63, 94, 0.12); 
+  --accent-soft: rgba(244, 63, 94, 0.12);
   --accent-glow: rgba(244, 63, 94, 0.25);
+}
+body[data-accent="matematik"] {
+  --accent: #3b82f6;
+  --accent-rgb: 59, 130, 246;
+  --accent-soft: rgba(59, 130, 246, 0.12);
+  --accent-glow: rgba(59, 130, 246, 0.25);
 }
 
 html { 
@@ -227,13 +233,21 @@ button:disabled {
   border-color: var(--accent);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35), 0 0 15px rgba(16, 185, 129, 0.15);
 }
-.subject-card[data-accent="vatandaslik"] { 
-  --accent: #f43f5e; 
+.subject-card[data-accent="vatandaslik"] {
+  --accent: #f43f5e;
   border-color: rgba(244, 63, 94, 0.12);
 }
 .subject-card[data-accent="vatandaslik"]:hover {
   border-color: var(--accent);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35), 0 0 15px rgba(244, 63, 94, 0.15);
+}
+.subject-card[data-accent="matematik"] {
+  --accent: #3b82f6;
+  border-color: rgba(59, 130, 246, 0.12);
+}
+.subject-card[data-accent="matematik"]:hover {
+  border-color: var(--accent);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35), 0 0 15px rgba(59, 130, 246, 0.15);
 }
 
 .subject-icon { 
@@ -928,11 +942,11 @@ body[data-accent] .trmap {
   margin: 12px 0 20px; 
 }
 .flip {
-  position: relative; 
-  width: 100%; 
-  min-height: 280px; 
+  position: relative;
+  width: 100%;
+  min-height: 280px;
   cursor: pointer;
-  transform-style: preserve-3d; 
+  transform-style: preserve-3d;
   transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
 }
 .flip.flipped { 
@@ -971,16 +985,21 @@ body[data-accent] .trmap {
   padding: 3px 10px;
   border-radius: 99px;
 }
-.flip-face.back { 
-  background: var(--surface); 
-  border: 2px solid rgba(255, 255, 255, 0.08); 
-  transform: rotateY(180deg); 
+.flip-face.back {
+  background: var(--surface);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  transform: rotateY(180deg);
+  align-items: flex-start;
+  overflow-y: auto;
 }
-.flip-face.back p { 
-  font-size: 1.05rem; 
-  line-height: 1.7; 
-  color: var(--text); 
+.flip-face.back p {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: var(--text);
   font-weight: 500;
+  white-space: pre-line;
+  text-align: left;
+  width: 100%;
 }
 .card-nav { 
   display: flex; 
