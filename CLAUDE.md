@@ -4,9 +4,9 @@ Bu dosya, bu depoda çalışan Claude Code (veya başka bir AI asistanı) için 
 
 ## Proje nedir
 
-**KPSS Arena** — KPSS sınavına hazırlananlar için **Tarih, Coğrafya, Vatandaşlık (Genel Kültür) ve Matematik** derslerini tek çatı altında toplayan, tamamen çevrimdışı çalışan interaktif eğitici oyun platformu. Kullanıcı ana sayfadan dersi seçer, derse özel oyunlar listelenir, oynayarak öğrenir.
+**KPSS Arena** — KPSS sınavına hazırlananlar için **Tarih, Coğrafya, Vatandaşlık (Genel Kültür) ve Matematik** derslerini tek çatı altında toplayan, tamamen çevrimdışı çalışan interaktif eğitici oyun platformu. Kullanıcı ana sayfadan dersi seçer; Genel Kültür derslerinde oyunlar, Matematik'te ise hız pratikleri listelenir ve oynayarak/çalışarak öğrenir.
 
-> **Matematik dersi diğerlerinden farklıdır:** Konu anlatımı/problem çözümü değil, soruları çözerken hız kazandıran **ezber ve pratik** bilgileridir (çarpım tablosu, kareler, küpler, üsler, faktöriyeller, asal sayılar, karekök tahmini, bölünebilme kuralları, yüzde-kesir-ondalık dönüşümleri, devirli kesirler vb.). Yeni içerik eklerken bu "hızlı tekrar/flashcard" ruhunu koru — kısa, doğrudan "X = ?" tarzı sorular ve hatırlatıcı `cards` tercih edilir; uzun problem metinlerinden kaçın. **Bilinçli olarak sade tutulur:** `SUBJECTS.matematik.games = ["cards", "quiz"]` — sadece kapsamlı "Önce Öğren" başvuru kartları ve karışık quiz (ünite içinde, "Tüm Matematik Oyunları" ve "Deneme Sınavı" ile karışık test). tf/match/memory/box/groups gibi diğer oyun türleri bu derste YOK; yeni matematik içeriği eklerken bunları geri getirme.
+> **Matematik dersi diğerlerinden tamamen farklı bir akış kullanır:** Konu anlatımı/problem çözümü değil, soruları çözerken hız kazandıran **ezber ve pratik** bilgileridir (çarpım tablosu, kuvvetler, küpler, faktöriyeller, asal sayılar, karekök, bölünebilme kuralları, yüzde-kesir-ondalık dönüşümleri, geometri formülleri, cebir özdeşlikleri vb.). **Matematik ünite / seviye / oyun / deneme sınavı / çıkmış sorular yapısını KULLANMAZ.** Bunun yerine doğrudan düz bir **"Pratikler" listesi** gösterir (`renderPractices` → `PRACTICES.matematik`); her pratik kendi `run*` fonksiyonuna sahip, hızlı, otomatik ilerleyen bir alıştırmadır (doğru → kısa bekleme, yanlış → doğru vurgulanır ve sonuçta tekrar listesine eklenir). Yeni matematik pratiği eklerken bu "hızlı tekrar/flashcard" ruhunu koru; oyun/ünite yapısını GERİ GETİRME. **Eski `data/matematik.js` (cards/quiz, ünite etiketli) artık arayüzde kullanılmıyor** — veri bütünlüğü testini bozmamak için duruyor ama yeni pratikler verilerini doğrudan `js/app.js` içindeki sabitlerden (ör. `DIV_RULES`, `IDENTITIES`, `GEO_FORMULA`) alır.
 
 - **Yapı:** Bağımlılığı olmayan saf **vanilla JS + HTML + CSS**. Build adımı, framework, paket yöneticisi YOK.
 - **Çalıştırma:** [index.html](index.html) dosyasını bir tarayıcıda açmak yeterli (çift tıkla). Sunucu gerekmez; tüm script'ler `file://` üzerinden `<script>` etiketleriyle yüklenir. **PWA olarak da kurulabilir** (HTTPS'te; bkz. PWA bölümü).
@@ -21,7 +21,7 @@ Genel Kültür dersleri (Tarih, Coğrafya, Vatandaşlık) **ünite (konu) + zorl
 - Her ünite 3 seviyede (1 Temel / 2 Pekiştirme / 3 Sınav), öncül (I-II-III) soruları, gruplara ayırma ve deneme sınavı dâhil. Her ünite/seviyede en az bir oynanabilir oyun bulunur (ölü tier yok).
 - **Geriye uyumluluk hâlâ korunuyor:** `data/units.js`'te bir dersin ünite listesi boşaltılırsa o ders otomatik olarak eski **düz oyun listesi** akışına (`renderFlatSubject`) düşer. Etiketsiz öğeler `unit:"genel"`, `level:2` sayılır.
 
-**Matematik:** ✅ 2 ünite (`uslu-koklu`, `kesir-yuzde-ondalik`), aynı ünite+seviye yapısını kullanır ama **konu** değil **ezber/hız pratiği** içerir ve oyun seti bilinçli olarak `cards` + `quiz` ile sınırlıdır (bkz. yukarıdaki not).
+**Matematik:** Ünite+seviye yapısına DÂHİL DEĞİL. `renderSubject` matematik için `renderPractices`'e yönlendirir (bkz. yukarıdaki not ve "Matematik pratikleri" bölümü). `data/units.js`'te matematik üniteleri ve `SUBJECTS.matematik.games = []` artık atıl; yeni iş için `PRACTICES.matematik` dizisine bak.
 
 ## Dosya yapısı
 
@@ -33,7 +33,7 @@ data/units.js           # ÜNİTE kayıtları: window.KPSS_DATA._units[ders] = [
 data/tarih.js           # Tarih içeriği (üniteye+seviyeye göre etiketli)
 data/cografya.js        # Coğrafya içeriği (nüfus = TÜİK 2025) — üniteye+seviyeye etiketli
 data/vatandaslik.js     # Vatandaşlık içeriği (1982 Anayasası, 2017) — üniteye+seviyeye etiketli
-data/matematik.js       # Matematik ezber/pratik içeriği (kareler, küpler, yüzde-kesir-ondalik vb.) — üniteye+seviyeye etiketli
+data/matematik.js       # (ATIL) eski matematik cards/quiz içeriği — artık arayüzde kullanılmıyor; yeni pratikler verisini js/app.js'teki sabitlerden alır
 manifest.webmanifest    # PWA manifesti (ad, ikonlar, standalone)
 sw.js                   # Service worker (cache-first, çevrimdışı). CACHE sürümünü bump et!
 icons/icon-192.png      # PWA ikonları (tools/gen-icons.js ile üretildi)
@@ -48,7 +48,7 @@ app.js bu global'i `KPSS_DATA` / `UNITS` olarak okur. **index.html'de `data/unit
 
 ## Oyunlar ve hangi veri alanını kullandıkları
 
-app.js içindeki `GAMES` sözlüğü her oyunu, `SUBJECTS` sözlüğü her dersin hangi oyunları gösterdiğini tanımlar.
+app.js içindeki `GAMES` sözlüğü her oyunu, `SUBJECTS` sözlüğü her dersin hangi oyunları gösterdiğini tanımlar. **Aşağıdaki tablodaki "Hepsi" = Tarih + Coğrafya + Vatandaşlık'tır; Matematik bu oyun/ünite sistemini kullanmaz (bkz. "Matematik pratikleri").**
 
 | Oyun (id)   | Kullandığı veri alanı | Hangi derslerde | Seviyeli? | Açıklama |
 |-------------|----------------------|-----------------|-----------|----------|
@@ -69,7 +69,36 @@ app.js içindeki `GAMES` sözlüğü her oyunu, `SUBJECTS` sözlüğü her dersi
 
 > **Veri alanı paylaşımı:** `whack`/`box` `quiz[]` alanını, `memory` `match[]` alanını kullanır (yeni içerik gerekmez). `GAME_FIELD` bu eşlemeyi tutar. Düz/karışık listede içeriği olmayan oyun `gameHasAnyData` ile gizlenir.
 
-Ayrıca oyun olmayan bir **mod** var: **Deneme Sınavı (`exam`)** — ders genelinden quiz+öncül karışık, süreli, ~20 soru; sonunda ünite bazlı rapor verir. `runExam`/`startExam`.
+Ayrıca oyun olmayan bir **mod** var: **Deneme Sınavı (`exam`)** — ders genelinden quiz+öncül karışık, süreli, ~20 soru; sonunda ünite bazlı rapor verir. `runExam`/`startExam`. (Yalnızca Tarih/Coğrafya/Vatandaşlık'ta; matematikte yok.)
+
+## Matematik pratikleri
+
+Matematik, yukarıdaki oyun/ünite/deneme sisteminin HİÇBİRİNİ kullanmaz. `renderPractices` ile düz bir kart listesi gösterir. İki sözlük/kayıt belirleyicidir:
+
+- **`PRACTICES.matematik`** (app.js): kart listesi — her eleman `{ id, icon, name, desc }`. `id`, `GAMES`'teki bir anahtarla **birebir aynı** olmalı (kart tıklanınca `startGame("matematik", id, {})` çağrılır).
+- **`GAMES[id]`**: o pratiğin `run` fonksiyonunu taşır (ör. `run: (s, o) => runMultiplication(s, o)`).
+
+Pratiklerin çoğu kendi küçük `run*` fonksiyonuna sahiptir ve verisini **`js/app.js` içindeki sabitlerden** alır (data/*.js'ten DEĞİL):
+
+| Pratik (id)   | Runner | Veri | İçerik |
+|---------------|--------|------|--------|
+| `carpim` | `runMultiplication` | (üretilir) | 1×1–10×10 tüm çarpımlar |
+| `pow2`/`pow3`/`pow5` | `runPowers(base,maxExp)` | (üretilir) | 2/3/5'in kuvvetleri |
+| `kupler` | `runCubes` | (üretilir) | 1³–10³ |
+| `faktoriyel` | `runFactorials` | (üretilir) | 0!–10! |
+| `karekok` | `runSquareRoots` | (üretilir) | √1–√400 (tam kareler) |
+| `asal` | `runPrime` | (üretilir) | 0–100 asal mı? (ikili karar) |
+| `bolunebilme` | `runDivisibility` | `DIV_RULES` | sayı → bölünebilme kuralı |
+| `pisagor` | `runPythagoras` | `PYTHAGOREAN` | iki dik kenardan hipotenüs |
+| `acilar` | `runAngles` | (üretilir) | tümler (90°) / bütünler (180°) |
+| `yuzdeKesir`/`ondalikKesir` | `runConvert(title,pairs)` | `YUZDE_KESIR` / `ONDALIK_KESIR` | yüzde/ondalık → kesir |
+| `geoFormul`/`icAcilar`/`hacim` | `runConvert` | `GEO_FORMULA` / `POLY_ANGLES` / `SOLID_VOLUME` | alan-çevre / iç açı / hacim |
+| `ozelUcgen` | `runConvert` | `SPECIAL_TRI` | 30-60-90, 45-45-90 |
+| `ozdeslik`/`usluKural`/`kokluKural`/`seriToplam` | `runConvert` | `IDENTITIES` / `EXPONENT_RULES` / `ROOT_RULES` / `SERIES_SUMS` | cebir özdeşlik/kural/toplam |
+
+- **`runConvert(subject, opts, title, pairs)`** ortak eşleştirme motorudur: `pairs = [[soru, cevap], ...]`; çeldiriciler aynı havuzdaki diğer cevaplardan üretilir (uydurma şık yok). Yeni bir "X = ?" tarzı eşleştirme pratiği için tek yapman gereken bir `[[soru,cevap]]` dizisi + `GAMES`/`PRACTICES` kaydı.
+- Ortak desen: her `run*` bir `ctx = { score, max, review }` tutar, `gameFrame`/`setProgress`/`setHud`/`finishGame` kullanır, doğru/yanlışta `addTimer(setTimeout(...))` ile otomatik ilerler. Yanlışlar `ctx.review`'a `{q, a, exp}` olarak eklenir.
+- **Yeni matematik pratiği eklerken** içerik doğruluğunu yine doğrula (formül/kural ezberi yanlışsa kullanıcı yanlış öğrenir). Saf ezber/hız ruhunu koru; problem metni veya oyun/ünite yapısı ekleme.
 
 - "Seviyeli" oyunlar `{unit, level}` ile, seviyesizler yalnızca `{unit}` ile filtrelenir (bkz. `LEVELED`, `getItems`).
 - Bir oyunun bir ünite/seviyede görünmesi için asgari öğe sayısı: app.js `GAME_MIN`.
@@ -143,7 +172,8 @@ Bu değerleri güncellerken hem `data/cografya.js`/`data/vatandaslik.js` içinde
 ## app.js mimari notları
 
 - Tek sayfalık uygulama; ekranlar `app.innerHTML` ile değiştirilir.
-- **Akış (Ünite yapısı - tüm dersler):** `renderHome()` → `renderSubject(key)` → `renderUnits(key)` (ünite haritası + Karışık + Deneme) → `renderUnit(subject, unitId, level)` (seviye sekmeleri + "Önce Öğren" + oyunlar) → `onGameSelect(...)` (soru havuzu >= 15 ise `renderTestSelection(...)` ile test seçimi açılır, yoksa doğrudan başlar) → `startGame(subject, gameId, opts)` → `run*()` → `finishGame(ctx)`.
+- **Akış (Ünite yapısı - Tarih/Coğrafya/Vatandaşlık):** `renderHome()` → `renderSubject(key)` → `renderUnits(key)` (ünite haritası + Karışık + Deneme) → `renderUnit(subject, unitId, level)` (seviye sekmeleri + "Önce Öğren" + oyunlar) → `onGameSelect(...)` (soru havuzu >= 15 ise `renderTestSelection(...)` ile test seçimi açılır, yoksa doğrudan başlar) → `startGame(subject, gameId, opts)` → `run*()` → `finishGame(ctx)`.
+- **Akış (Matematik — ayrı):** `renderHome()` → `renderSubject("matematik")` → `renderPractices("matematik")` (düz "Pratikler" kartı listesi; ünite/seviye/deneme YOK) → `startGame("matematik", practiceId, {})` → ilgili `run*()` → `finishGame(ctx)`. `renderSubject` matematik için `PRACTICES[key]` varsa `renderPractices`'e dallanır; `backToContext` de matematikte `renderPractices`'e döner.
 - **Dilimleme ve Test Başarıları:** `getGameQuestions(pool, defaultSize, opts)` yardımıyla büyük soru havuzları Test 1, Test 2 şeklinde dilimlenir. Testlerdeki en yüksek başarılar `save.tests[ders][ünite][seviye/genel][oyun][testIndex] = { score, max }` olarak kaydedilir.
 - **Filtreleme:** Tüm `run*` fonksiyonları havuzu doğrudan `KPSS_DATA`'dan değil `getItems(subject, field, opts)`'tan alır. `opts={unit,level}` (seviyeli) veya `{unit}` (seviyesiz). Eşleşme yoksa tüm havuza düşer (etiketsiz dersler bozulmaz).
 - **Ustalık/kilit:** `save.prog[ders][ünite][seviye] = en iyi yüzde`. Seviye 1 hep açık; bir üst seviye, alttaki seviyede **%60** başarınca açılır (`levelUnlocked`). Ünite kartındaki yüzde `unitMastery`'den gelir. `finishGame` yalnızca seviyeli oyunlarda `recordProg` çağırır.
